@@ -29,7 +29,7 @@ kafka_broker = kafkahost+":9092"
 # Kafka input config
 kafka_input_config = {
     "kafka.bootstrap.servers": kafka_broker,
-    "subscribe": "test-topic",
+    "subscribe": "orders",
     "startOffsets" : "latest",
     "failOnDataLoss" : "false"
 }
@@ -69,7 +69,7 @@ order_schema = StructType([
 df = spark.readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", kafka_broker) \
-    .option("subscribe", "test-topic") \
+    .option("subscribe", "orders") \
     .option("startOffsets", "latest") \
     .option("failOnDataLoss", "false") \
     .load() \
