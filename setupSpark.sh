@@ -5,4 +5,4 @@ cd /home/kafka/kafka-setup
 mv spark-3.5.3-bin-hadoop3 /opt/spark
 
 
-nohup bash   /home/kafka/kafka-setup/sparkSetup.sh < /dev/null 2> /dev/null > /dev/null &
+nohup bash   /home/kafka/kafka-setup/sparkSetup.sh < /dev/null 2> /dev/null > /home/kafka/kafka-setup/1.log &
