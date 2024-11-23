@@ -3,13 +3,13 @@ import time
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 from pyspark.sql.types import *
-import os
 
 findspark.init()
 
+import os
 # Include Kafka package
 os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3 pyspark-shell'
-kafkahost = os.environ.get("KAFKA_HOST", "localhost")
+kafkahost=os.environ.get("KAFKA_HOST", "localhost")
 
 # Create Spark session with Kafka support
 spark = SparkSession.builder \
@@ -23,19 +23,6 @@ kafka_input_config = {
     "subscribe": "orders",
     "startOffsets": "latest",
     "failOnDataLoss": "false"
-}
-
-# Kafka output config with updated checkpoint location
-checkpoint_dir = "/home/cloudlab/checkpoints"
-
-# Ensure the directory exists and create it if necessary
-if not os.path.exists(checkpoint_dir):
-    os.makedirs(checkpoint_dir)
-
-kafka_output_config = {
-    "kafka.bootstrap.servers": kafka_broker,
-    "topic": "output",
-    "checkpointLocation": checkpoint_dir
 }
 
 # Input Schema
@@ -61,7 +48,7 @@ order_schema = StructType([
 ])
 
 # Function to retry connection
-def retry_connection(spark, kafka_input_config, kafka_output_config, retries=3, delay=60):
+def retry_connection(spark, kafka_input_config, retries=3, delay=60):
     for attempt in range(retries):
         try:
             # Read data from Kafka topic as a streaming DataFrame
@@ -90,23 +77,13 @@ def retry_connection(spark, kafka_input_config, kafka_output_config, retries=3, 
                 .withColumnRenamed("sum(totalPrice)", "totalRevenue")
 
             # Write the stream to the console
-            console_write = revenue_by_medicine \
+            write = revenue_by_medicine \
                 .writeStream \
                 .outputMode("update") \
                 .format("console") \
                 .start()
 
-            # Write the stream to Kafka
-            kafka_write = revenue_by_medicine \
-                .select(F.to_json(F.struct(F.col("medicineName"), F.col("totalRevenue"))).alias("value")) \
-                .writeStream \
-                .outputMode("update") \
-                .format("kafka") \
-                .options(**kafka_output_config) \
-                .start()
-
-            console_write.awaitTermination()
-            kafka_write.awaitTermination()
+            write.awaitTermination()
             break
 
         except Exception as e:
@@ -119,4 +96,4 @@ def retry_connection(spark, kafka_input_config, kafka_output_config, retries=3, 
                 raise
 
 # Retry connection for 3 minutes (3 retries with a delay of 1 minute each)
-retry_connection(spark, kafka_input_config, kafka_output_config, retries=3, delay=60)
+retry_connection(spark, kafka_input_config, retries=3, delay=60)
